@@ -9,14 +9,22 @@
 			<goal>-e</goal>
 		</goals>
 	</action>
-
 	<action>
-		<actionName>CUSTOM-Release</actionName>
-		<displayName>Release</displayName>
+		<actionName>CUSTOM-deploy</actionName>
+		<displayName>Deploy</displayName>
 		<goals>
 			<goal>clean</goal>
 			<goal>deploy</goal>
 			<goal>-e</goal>
+		</goals>
+	</action>
+	<action>
+		<actionName>CUSTOM-set-version</actionName>
+		<displayName>Change Version</displayName>
+		<goals>
+			<goal>versions:set</goal>
+			<goal>versions:commit</goal>
+			<goal>-Pversioning</goal>
 		</goals>
 	</action>
 </actions>

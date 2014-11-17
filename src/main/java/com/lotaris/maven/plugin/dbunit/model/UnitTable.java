@@ -6,12 +6,13 @@ import org.dbunit.ant.Query;
 
 /**
  * Represent a table information with ordered column names
- * @author Laurent Prevost, laurent.prevost@lotaris.com
+ * 
+ * @author Laurent Prevost <laurent.prevost@lotaris.com>
  */
 public class UnitTable {
 	private String tableName;
 	
-	private Set<UnitColumn> columns = new TreeSet<UnitColumn>(); 
+	private Set<UnitColumn> columns = new TreeSet<>(); 
 	
 	//<editor-fold defaultstate="collapsed" desc="Constructors">
 	public UnitTable(String tableName) {

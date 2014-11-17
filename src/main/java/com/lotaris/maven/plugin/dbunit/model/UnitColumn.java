@@ -2,7 +2,8 @@ package com.lotaris.maven.plugin.dbunit.model;
 
 /**
  * Represent a column information
- * @author Laurent Prévost, laurent.prevost@lotaris.com
+ * 
+ * @author Laurent Prévost <laurent.prevost@lotaris.com>
  */
 public class UnitColumn implements Comparable<UnitColumn> {
 	

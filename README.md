@@ -4,21 +4,13 @@
 
 ## Usage
 
-1. Clone the repository.
-
-2. Run the following command
-
-```bash
-cd <projectFolder>
-mvn clean install
-```
-
-3. Put the following dependency in your pom.xml
+1. Put the following dependency in your pom.xml
 
 ```xml
 <plugin>
 	<groupId>com.lotaris.maven.plugins</groupId>
 	<artifactId>lotaris-dbunit-maven-plugin</artifactId>
+	<version>1.0.0</version>
 	<configuration>
 		<url>jdbc:mysql://localhost:3306/oneDb/?sessionVariables=FOREIGN_KEY_CHECKS=0&amp;useUnicode=true&amp;characterEncoding=utf-8</url>
 		<username>oneDbUser</username>

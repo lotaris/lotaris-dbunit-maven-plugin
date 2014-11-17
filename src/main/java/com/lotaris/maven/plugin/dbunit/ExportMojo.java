@@ -4,6 +4,7 @@ package com.lotaris.maven.plugin.dbunit;
  * The MIT License
  *
  * Copyright (c) 2006, The Codehaus
+ * Copyright (c) 2012, Lotaris SA (forked, enriched)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -33,6 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.dbunit.ant.Export;
 import org.dbunit.ant.Query;
 import org.dbunit.ant.Table;
@@ -41,77 +45,66 @@ import org.dbunit.database.IDatabaseConnection;
 /**
  * Execute DbUnit Export operation
  *
- * @author Laurent Prévost, laurent.prevost@lotaris.com
- *
  * @author <a href="mailto:dantran@gmail.com">Dan Tran</a>
  * @author <a href="mailto:topping@codehaus.org">Brian Topping</a>
  * @author <a href="mailto:david@codehaus.org">David J. M. Karlsen</a>
- * 
- * @goal export
+ * @author Laurent Prévost <laurent.prevost@lotaris.com>
  */
+@Mojo(name = "export", requiresDependencyCollection = ResolutionScope.COMPILE)
 public class ExportMojo extends AbstractDbUnitMojo {
 	/**
 	 * Location of exported DataSet file
-	 *
-	 * @parameter expression="${dest}" default-value="${project.build.directory}/dbunit/export.xml"
 	 */
+	@Parameter(defaultValue = "${project.build.directory}/dbunit/export.xml")
 	protected File dest;
 	
 	/**
 	 * DataSet file format
-	 *
-	 * @parameter expression="${format}" default-value="xml"
 	 */
+	@Parameter(defaultValue = "xml")
 	protected String format;
 	
 	/**
 	 * doctype
-	 *
-	 * @parameter expression="${doctype}"
 	 */
+	@Parameter
 	protected String doctype;
 	
 	/**
 	 * List of DbUnit's Table. See DbUnit's JavaDoc for details
-	 *
-	 * @parameter
 	 */
+	@Parameter
 	protected Table[] tables;
 	
 	/**
 	 * List of DbUnit's Query. See DbUnit's JavaDoc for details
-	 *
-	 * @parameter
 	 */
+	@Parameter
 	protected Query[] queries;
 	
 	/**
 	 * Set to true to order exported data according to integrity constraints defined in DB.
-	 *
-	 * @parameter expression="${ordered}"
 	 */
+	@Parameter
 	protected boolean ordered;
 	
 	/**
 	 * Encoding of exported data.
-	 *
-	 * @parameter expression="${encoding}" default-value="${project.build.sourceEncoding}"
 	 */
+	@Parameter(defaultValue = "${project.build.sourceEncoding}")
 	protected String encoding;
 	
 	/**
 	 * List of table to exclude.
-	 * 
-	 * @parameter
 	 */
+	@Parameter
 	private String[] excludes;
 	
 	/**
 	 * Allows to not extract any data of empty tables
-	 * 
-	 * @parameter default-value="false"
 	 */
-	private Boolean excludeEmptyTables;
+	@Parameter(defaultValue = "${false}")
+	private Boolean excludeEmptyTables = false;
 	
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
@@ -135,64 +128,57 @@ public class ExportMojo extends AbstractDbUnitMojo {
 					DatabaseMetaData meta = con.getMetaData();
 
 					// Create the list of tables to extract
-					tablesToExtract = new ArrayList<UnitTable>();
-				
-					// Get the tables from metadata
-					ResultSet rs = meta.getTables(null, null, "%", new String[] {"TABLE"});
-
-					// Iterate the results
-					while (rs.next()) {
-						String tName = rs.getString("TABLE_NAME");
-						
-						// Flag for exclusion
-						boolean excluded = false;
-						
-						// Check if exclusion rules are configured
-						if (excludes != null) {
-							// Iterate the exclusion rules
-							for (String exclude : excludes) {
-								// Check for exclusion
-								if (tName.matches(exclude)) {
-									excluded = true;
-									break;
-								}
-							}
-						}
-
-						// Check if empty tables must be excluded
-						if (!excluded && excludeEmptyTables) {
-							ResultSet cntRs = con.createStatement().executeQuery("SELECT COUNT(*) AS CNT FROM " + tName  + ";");
-							while (cntRs.next()) {
-								if (cntRs.getInt("CNT") == 0) {
-									excluded = true;
-								}
-							} 
-							cntRs.close();
-						}
-						
-						if (!excluded) {
-							// Create the table information
-							UnitTable ut = new UnitTable(tName);
-
-							// Add the table to the list of table to extract
-							tablesToExtract.add(ut);
-
-							// Get the column informations and iterate the result
-							ResultSet rst = meta.getColumns(null, null, ut.getTableName(), null);
-							while (rst.next()) {
-								// Get the column name
-								ut.addColumn(rst.getString("COLUMN_NAME"));
-							}
-							rst.close();
+					tablesToExtract = new ArrayList<>();
+					try (ResultSet rs = meta.getTables(null, null, "%", new String[] {"TABLE"})) {
+						while (rs.next()) {
+							String tName = rs.getString("TABLE_NAME");
 							
-							// Logging
-							if (verbose) {
-								getLog().info(ut.toString());
+							// Flag for exclusion
+							boolean excluded = false;
+							
+							// Check if exclusion rules are configured
+							if (excludes != null) {
+								// Iterate the exclusion rules
+								for (String exclude : excludes) {
+									// Check for exclusion
+									if (tName.matches(exclude)) {
+										excluded = true;
+										break;
+									}
+								}
+							}
+
+							// Check if empty tables must be excluded
+							if (!excluded && excludeEmptyTables) {
+								try (ResultSet cntRs = con.createStatement().executeQuery("SELECT COUNT(*) AS CNT FROM " + tName  + ";")) {
+									while (cntRs.next()) {
+										if (cntRs.getInt("CNT") == 0) {
+											excluded = true;
+										}
+									}
+								}
+							}
+							
+							if (!excluded) {
+								// Create the table information
+								UnitTable ut = new UnitTable(tName);
+
+								// Add the table to the list of table to extract
+								tablesToExtract.add(ut);
+								try (ResultSet rst = meta.getColumns(null, null, ut.getTableName(), null)) {
+									while (rst.next()) {
+										// Get the column name
+										ut.addColumn(rst.getString("COLUMN_NAME"));
+									}
+								}
+								
+								// Logging
+								if (verbose) {
+									getLog().info(ut.toString());
+								}
 							}
 						}
 					}
-
-					rs.close();
 				}
 					
 				Export export = new Export();
@@ -227,12 +213,13 @@ public class ExportMojo extends AbstractDbUnitMojo {
 				export.setEncoding(encoding);
 
 				export.execute(connection);
-			} finally {
+			} 
+			finally {
 				connection.close();
 			}
-		} catch (Exception e) {
+		} 
+		catch (Exception e) {
 			throw new MojoExecutionException("Error executing export", e);
 		}
-
 	}
 }

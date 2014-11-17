@@ -32,6 +32,8 @@ import java.util.Properties;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.dbunit.database.DatabaseConfig;
@@ -56,132 +58,108 @@ import org.dbunit.dataset.datatype.IDataTypeFactory;
 public abstract class AbstractDbUnitMojo extends AbstractMojo {
 	/**
 	 * The class name of the JDBC driver to be used.
-	 *
-	 * @parameter expression="${driver}" @required
 	 */
+	@Parameter(required = true)
 	protected String driver;
 	
 	/**
-	 * Database username. If not given, it will be looked up through settings.xml's server with
-	 * ${settingsKey} as key 
-	 * 
-	 * @parameter expression="${username}"
+	 * Database username. If not given, it will be looked up through settings.xml's server with ${settingsKey} as key 
 	 */
+	@Parameter
 	protected String username;
 	
 	/**
-	 * Database password. If not given, it will be looked up through settings.xml's server with
-	 * ${settingsKey} as key 
-	 * 
-	 * @parameter expression="${password}"
+	 * Database password. If not given, it will be looked up through settings.xml's server with ${settingsKey} as key 
 	 */
+	@Parameter
 	protected String password;
 	
 	/**
 	 * The JDBC URL for the database to access, e.g. jdbc:db2:SAMPLE.
-	 *
-	 * @parameter @required expression="${url}"
 	 */
+	@Parameter(required = true)
 	protected String url;
 	
 	/**
 	 * The schema name that tables can be found under.
-	 *
-	 * @parameter expression="${schema}"
 	 */
+	@Parameter
 	protected String schema;
 	
 	/**
 	 * Set the DataType factory to add support for non-standard database vendor data types.
-	 *
-	 * @parameter expression="${dataTypeFactoryName}" default-value="org.dbunit.dataset.datatype.DefaultDataTypeFactory"
 	 */
+	@Parameter(defaultValue = "org.dbunit.dataset.datatype.DefaultDataTypeFactory")
 	protected String dataTypeFactoryName = "org.dbunit.dataset.datatype.DefaultDataTypeFactory";
 	
 	/**
 	 * Enable or disable usage of JDBC batched statement by DbUnit 
-	 * 
-	 * @parameter expression="${supportBatchStatement}" default-value="false"
 	 */
-	protected boolean supportBatchStatement;
+	@Parameter(defaultValue = "${false}")
+	protected boolean supportBatchStatement = false;
 	
 	/**
 	 * Enable or disable multiple schemas support by prefixing table names with the schema name.
-	 *
-	 * @parameter expression="${useQualifiedTableNames}" default-value="false"
 	 */
-	protected boolean useQualifiedTableNames;
+	@Parameter(defaultValue = "${false}")
+	protected boolean useQualifiedTableNames = false;
 	
 	/**
 	 * Enable or disable the warning message displayed when DbUnit encounter an unsupported data type.
-	 * 
-	 * @parameter expression="${datatypeWarning}" default-value="false"
 	 */
-	protected boolean datatypeWarning;
+	@Parameter(defaultValue = "${false}")
+	protected boolean datatypeWarning = false;
 	
 	/**
 	 * escapePattern
-	 *
-	 * @parameter expression="${escapePattern}"
 	 */
+	@Parameter
 	protected String escapePattern;
 	
 	/**
 	 * skipOracleRecycleBinTables
-	 *
-	 * @parameter expression="${escapePattern}" default-value="false"
-	 *
-	 * @since 1.0-beta-2
 	 */
-	protected boolean skipOracleRecycleBinTables;
+	@Parameter(defaultValue = "${false}")
+	protected boolean skipOracleRecycleBinTables = false;
 	
 	/**
 	 * Skip the execution when true, very handy when using together with maven.test.skip.
-	 *
-	 * @parameter expression="${skip}" default-value="false"
 	 */
-	protected boolean skip;
+	@Parameter(defaultValue = "${false}")
+	protected boolean skip = false;
 	
 	/**
 	 * Access to hidding username/password 
-	 * 
-	 * @parameter expression="${settings}" @readonly
 	 */
+	@Parameter(readonly = true)
 	private Settings settings;
 	
 	/**
 	 * Server's id in settings.xml to look up username and password. Default to ${url} if not given.
-	 * 
-	 * @parameter expression="${settingsKey}"
 	 */
+	@Parameter
 	private String settingsKey;
 	
 	/**
 	 * Class name of metadata handler. 
-	 * 
-	 * @parameter expression="${metadataHandlerName}" default-value="org.dbunit.database.DefaultMetadataHandler"
-	 *
-	 * @since 1.0-beta-3
 	 */
-	protected String metadataHandlerName;
+	@Parameter(defaultValue = "org.dbunit.database.DefaultMetadataHandler")
+	protected String metadataHandlerName = "org.dbunit.database.DefaultMetadataHandler";
 	
 	/**
 	 * Be case sensitive when handling tables.
-	 *
-	 * @see http://www.dbunit.org/properties.html#casesensitivetablenames
-	 *
-	 * @parameter default-value="false"
 	 */
-	private boolean caseSensitiveTableNames;
+	@Parameter(defaultValue = "${false}")
+	private boolean caseSensitiveTableNames = false;
 
 	/**
 	 * Enable/Disable the verbosity of the plugin
-	 *
-	 * @parameter default-value="false"
 	 */
-	protected Boolean verbose;
+	@Parameter(defaultValue = "${false}")
+	protected Boolean verbose = false;
 	
 	////////////////////////////////////////////////////////////////////
+	@Override
 	public void execute()
 		throws MojoExecutionException, MojoFailureException {
 		loadUserInfoFromSettings();
@@ -210,11 +188,11 @@ public abstract class AbstractDbUnitMojo extends AbstractMojo {
 
 		IDatabaseConnection connection = new DatabaseConnection(conn, schema);
 		DatabaseConfig config = connection.getConfig();
-		config.setFeature(DatabaseConfig.FEATURE_BATCHED_STATEMENTS, supportBatchStatement);
-		config.setFeature(DatabaseConfig.FEATURE_QUALIFIED_TABLE_NAMES, useQualifiedTableNames);
-		config.setFeature(DatabaseConfig.FEATURE_DATATYPE_WARNING, datatypeWarning);
-		config.setFeature(DatabaseConfig.FEATURE_SKIP_ORACLE_RECYCLEBIN_TABLES, this.skipOracleRecycleBinTables);
-		config.setFeature(DatabaseConfig.FEATURE_CASE_SENSITIVE_TABLE_NAMES, caseSensitiveTableNames);
+		config.setProperty(DatabaseConfig.FEATURE_BATCHED_STATEMENTS, supportBatchStatement);
+		config.setProperty(DatabaseConfig.FEATURE_QUALIFIED_TABLE_NAMES, useQualifiedTableNames);
+		config.setProperty(DatabaseConfig.FEATURE_DATATYPE_WARNING, datatypeWarning);
+		config.setProperty(DatabaseConfig.FEATURE_SKIP_ORACLE_RECYCLEBIN_TABLES, this.skipOracleRecycleBinTables);
+		config.setProperty(DatabaseConfig.FEATURE_CASE_SENSITIVE_TABLE_NAMES, caseSensitiveTableNames);
 
 		config.setProperty(DatabaseConfig.PROPERTY_ESCAPE_PATTERN, escapePattern);
 		config.setProperty(DatabaseConfig.PROPERTY_RESULTSET_TABLE_FACTORY, new ForwardOnlyResultSetTableFactory());

@@ -24,6 +24,9 @@ import java.io.File;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.dbunit.ant.Compare;
 import org.dbunit.ant.Query;
 import org.dbunit.ant.Table;
@@ -32,48 +35,40 @@ import org.dbunit.database.IDatabaseConnection;
 /**
  * Execute DbUnit Compare operation
  *
- * @goal compare
- *
  * @author <a href="mailto:dantran@gmail.com">Dan Tran</a>
  *
  * @version $Id$
  */
+@Mojo(name = "compare", requiresDependencyCollection = ResolutionScope.COMPILE)
 public class CompareMojo extends AbstractDbUnitMojo {
 	/**
 	 * DataSet file
-	 *
-	 * @parameter expression="${src}"
-	 *
-	 * @required
 	 */
+	@Parameter(required = true)
 	protected File src;
 	
 	/**
 	 * DataSet file format
-	 *
-	 * @parameter expression="${format}" default-value="xml"
 	 */
-	protected String format;
+	@Parameter(defaultValue = "xml")
+	protected String format = "xml";
 	
 	/**
 	 * sort
-	 *
-	 * @parameter expression="${sort}"
 	 */
+	@Parameter
 	protected boolean sort;
 	
 	/**
 	 * List of DbUnit's Table. See DbUnit's org.dbunit.ant.Table JavaDoc for details
-	 *
-	 * @parameter
 	 */
+	@Parameter
 	protected Table[] tables;
 	
 	/**
 	 * List of DbUnit's Query. See DbUnit's org.dbunit.ant.Query JavaDoc for details
-	 *
-	 * @parameter
 	 */
+	@Parameter
 	protected Query[] queries;
 
 	@Override
